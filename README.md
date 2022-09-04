@@ -1,0 +1,2 @@
+# cfgpie
+Simplified ConfigParser setup.
