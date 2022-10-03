@@ -15,6 +15,19 @@ python -m pip install [--upgrade] cfgpie
 
 ---
 
+#### Dependencies:
+
+* [customlib](https://github.com/ClaudiuDrug/custom-library):
+
+    * `customlib.filehandlers.FileHandler`
+    * `customlib.singletons.NamedSingleton`
+
+```commandline
+python -m pip install [--upgrade] customlib
+```
+
+---
+
 #### Usage:
 
 After installation, simply import the class `CfgParser` from `cfgpie` module:

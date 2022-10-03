@@ -2,40 +2,19 @@
 
 from ast import literal_eval
 from configparser import ExtendedInterpolation, ConfigParser
-from functools import update_wrapper
 from os.path import isfile, exists, realpath
 from sys import argv
 from typing import Iterator, Sequence, Union, List, Tuple, Dict
 
-from .constants import INSTANCES, Key, Value, ROOT, CONFIG
+from customlib.filehandlers import FileHandler
+from customlib.singletons import NamedSingleton
+
+from .constants import Key, Value, ROOT, CONFIG
 from .exceptions import ArgParseError
 from .utils import ensure_folder, folder, file
 
 
-class Singleton(object):
-    """
-    Singleton decorator (for metaclass).
-    With this class you have the option to create multiple instances by
-    passing the `instance` parameter to a decorated class.
-    Restrict object to only one instance per runtime.
-    """
-
-    def __init__(self, cls):
-        update_wrapper(self, cls)
-        self.cls = cls
-
-    def __call__(self, *args, **kwargs):
-        name: str = f"{kwargs.pop('instance', 'default')}.{self.cls.__name__}"
-
-        if name not in INSTANCES:
-            # a reference to the object is required.
-            instance = self.cls(*args, **kwargs)
-            INSTANCES[name] = instance
-
-        return INSTANCES[name]
-
-
-@Singleton
+@NamedSingleton
 class CfgParser(ConfigParser):
     """Configuration handle."""
 
@@ -119,8 +98,8 @@ class CfgParser(ConfigParser):
     def save(self, file_path: str, encoding: str):
         """Save the configuration to `file_path`."""
         ensure_folder(file_path)
-        with open(file_path, "w", encoding=encoding) as file_handle:
-            self.write(file_handle)
+        with FileHandler(file_path, "w", encoding=encoding) as fh:
+            self.write(fh)
 
     def _default_params(self, kwargs: dict) -> dict:
         temp: dict = kwargs.copy()
