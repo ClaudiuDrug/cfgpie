@@ -20,7 +20,6 @@ python -m pip install [--upgrade] cfgpie
 * [customlib](https://github.com/ClaudiuDrug/custom-library):
 
     * `customlib.filehandlers.FileHandler`
-    * `customlib.singletons.NamedSingleton`
 
 ```commandline
 python -m pip install [--upgrade] customlib
@@ -30,20 +29,20 @@ python -m pip install [--upgrade] customlib
 
 #### Usage:
 
-After installation, simply import the class `CfgParser` from `cfgpie` module:
+After installation, simply import the method `get_config` from `cfgpie` module:
 ```python
-from cfgpie import CfgParser
+from cfgpie import CfgParser, get_config
 ```
 
 By passing a name with the `instance` param we can have multiple instances:
 ```python
 # mymodule.py
 
-from cfgpie import CfgParser
+from cfgpie import CfgParser, get_config
 
-cfg = CfgParser(instance="main")
-cfg2 = CfgParser(instance="main")
-other = CfgParser(instance="other")
+cfg: CfgParser = get_config(instance="main")
+cfg2: CfgParser = get_config(instance="main")
+other: CfgParser = get_config(instance="other")
 
 
 if __name__ == '__main__':
@@ -105,16 +104,16 @@ For interpolation, refer to `interpolation-of-values`
 ```python
 # mymodule.py
 
-from cfgpie import CfgParser
+from cfgpie import CfgParser, get_config
 
 from .constants import ROOT, CONFIG, BACKUP
 
-cfg = CfgParser(instance="main")
+cfg: CfgParser = get_config(instance="main")
 
 # we can set default section options:
 cfg.set_defaults(directory=ROOT)
 # also possible at instance creation:
-# cfg = CfgParser(defaults=some_dict)
+# cfg: CfgParser = get_config(defaults=some_dict)
 
 # we can provide a backup dictionary
 # in case our config file does not exist
@@ -148,8 +147,9 @@ python -O main.py --section-option value --section-option value
 ```
 cmd-line args have priority over config file and will override the cfg params.
 
-Given that `CfgParser` inherits from `ConfigParser`, and with the help of our
-converters, we now have seven extra methods to use in our advantage:
+Besides the methods that `ConfigParser` was already providing,
+and with the help of our converters,
+we now have seven extra methods to use in our advantage:
 
 ```python
 some_list: list = cfg.getlist("SECTION", "option")

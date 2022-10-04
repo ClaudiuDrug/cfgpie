@@ -7,14 +7,12 @@ from sys import argv
 from typing import Iterator, Sequence, Union, List, Tuple, Dict
 
 from customlib.filehandlers import FileHandler
-from customlib.singletons import NamedSingleton
 
 from .constants import Key, Value, ROOT, CONFIG
 from .exceptions import ArgParseError
 from .utils import ensure_folder, folder, file
 
 
-@NamedSingleton
 class CfgParser(ConfigParser):
     """Configuration handle."""
 
@@ -58,7 +56,7 @@ class CfgParser(ConfigParser):
         return exists(item) and isfile(item)
 
     def __init__(self, **kwargs):
-        ConfigParser.__init__(self, **self._default_params(kwargs))
+        super(CfgParser, self).__init__(**self._default_params(kwargs))
 
     def parse(self, args: Sequence[str] = None):
         """Parse command-line arguments and update the configuration."""
