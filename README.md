@@ -147,39 +147,45 @@ python -O main.py --section-option value --section-option value
 ```
 cmd-line args have priority over config file and will override the cfg params.
 
-Besides the methods that `ConfigParser` was already providing,
-and with the help of our converters,
-we now have seven extra methods to use in our advantage:
+---
 
-```python
-some_list: list = cfg.getlist("SECTION", "option")
-some_tuple: tuple = cfg.gettuple("SECTION", "option")
-some_set: set = cfg.getset("SECTION", "option")
-some_dict: dict = cfg.getdict("SECTION", "option")
-some_path: str = cfg.getpath("SECTION", "option")
-
-# these methods will also check if the path exists and create one if not. 
-some_folder: str = cfg.getfolder("SECTION", "option")
-some_file: str = cfg.getfile("SECTION", "option")
-```
-
-`getpath()`, `getfolder()` and `getfile()` also use `os.path.realpath`
-to enforce a consistency in the formatting of the path.
+#### Defaults:
 
 If not provided, by default, `CfgParser` will set:
 
 * `defaults` parameter as dict with section `DEFAULT` and option `directory` to the root folder of the `__main__` module.
 
+
 * `instance` parameter to the name `default`;
+
 
 * `interpolation` parameter to [ExtendedInterpolation](https://docs.python.org/3.7/library/configparser.html#configparser.ExtendedInterpolation);
 
-* `converters` parameter to evaluate `list`, `tuple`, `set` and `dict` objects with the help of
-    [ast.literal_eval()](https://docs.python.org/3.7/library/ast.html#ast.literal_eval) function.
 
-    Plus `os.path.realpath()`, `folder()` and `file()` to evaluate paths.
-    See [utils.py](src/cfgpie/utils.py) for the last two methods.
-    > Note: `folder()` and `file()` methods will recursively create the folder structure if needed.
+* `converters` parameter to evaluate:
+
+    * `list`, `tuple`, `set` and `dict` objects using [ast.literal_eval()](https://docs.python.org/3.7/library/ast.html#ast.literal_eval) function;
+
+    * `decimal` objects using [decimal.Decimal()](https://docs.python.org/3.7/library/decimal.html);
+
+    * `path` strings using [os.path.realpath()](https://docs.python.org/3.7/library/os.path.html#os.path.realpath);
+
+    * `folder` and `file` paths which:
+
+        * return a path-like formatted string depending on the operating system;
+
+        * will recursively create the folder structure if missing (see `folder()` & `file()` methods in [utils.py](src/cfgpie/utils.py)).
+
+    > All of which can be accessed by prefixing them with `get`:
+    >
+    > * `getlist("SECTION", "option")`
+    > * `gettuple("SECTION", "option")`
+    > * `getset("SECTION", "option")`
+    > * `getdict("SECTION", "option")`
+    > * `getdecimal("SECTION", "option")`
+    > * `getpath("SECTION", "option")`
+    > * `getfolder("SECTION", "option")`
+    > * `getfile("SECTION", "option")`
 
 All other parameters are passed directly to
 [ConfigParser](https://docs.python.org/3.7/library/configparser.html).

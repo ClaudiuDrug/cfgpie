@@ -5,7 +5,7 @@ from configparser import ExtendedInterpolation, ConfigParser
 from os.path import isfile, exists, realpath
 from sys import argv
 from typing import Iterator, Sequence, Union, List, Tuple, Dict
-
+from decimal import Decimal
 from customlib.filehandlers import FileHandler
 
 from .constants import Key, Value, ROOT, CONFIG
@@ -13,10 +13,48 @@ from .exceptions import ArgParseError
 from .utils import ensure_folder, folder, file
 
 
-class CfgParser(ConfigParser):
+class ArgsParser(object):
+
+    @staticmethod
+    def _update_params(params: dict, section: str, option: str, value: str):
+
+        if section not in params:
+            params.update({section: {option: value}})
+        else:
+            params.get(section).update({option: value})
+
+    @classmethod
+    def parse(cls, args: Iterator[str]) -> dict:
+        temp = dict()
+
+        for arg in args:
+            if arg.startswith("--") is True:
+                stripped = arg.strip("-")
+                try:
+                    section, option = stripped.split("-")
+                except ValueError:
+                    raise ArgParseError(f"Inconsistency in cmd-line parameters '{arg}'!")
+                else:
+                    try:
+                        value = next(args)
+                    except StopIteration:
+                        raise ArgParseError(f"Missing value for parameter '{arg}'")
+                    else:
+                        if value.startswith("--") is False:
+                            cls._update_params(temp, section.upper(), option, value)
+                        else:
+                            raise ArgParseError(f"Incorrect value '{value}' for parameter '{arg}'!")
+            else:
+                raise ArgParseError(f"Inconsistency in cmd-line parameters '{arg}'!")
+
+        return temp
+
+
+class CfgParser(ConfigParser, ArgsParser):
     """Configuration handle."""
 
     _DEFAULT_CONVERTERS: dict = {
+        "decimal": Decimal,
         "list": literal_eval,
         "tuple": literal_eval,
         "set": literal_eval,
@@ -44,14 +82,6 @@ class CfgParser(ConfigParser):
         return mapping
 
     @staticmethod
-    def _update_params(params: dict, section: str, option: str, value: str):
-
-        if section not in params:
-            params.update({section: {option: value}})
-        else:
-            params.get(section).update({option: value})
-
-    @staticmethod
     def _exists(item: str) -> bool:
         return exists(item) and isfile(item)
 
@@ -65,7 +95,7 @@ class CfgParser(ConfigParser):
 
         if len(args) > 0:
             self.read_dict(
-                dictionary=self._parse(iter(args)),
+                dictionary=super(CfgParser, self).parse(iter(args)),
                 source="<cmd-line>"
             )
 
@@ -117,28 +147,3 @@ class CfgParser(ConfigParser):
         converters: dict = self._DEFAULT_CONVERTERS.copy()
         converters.update(**kwargs)
         return converters
-
-    def _parse(self, args: Iterator[str]) -> dict:
-        temp = dict()
-
-        for arg in args:
-            if arg.startswith("--") is True:
-                stripped = arg.strip("-")
-                try:
-                    section, option = stripped.split("-")
-                except ValueError:
-                    raise ArgParseError(f"Inconsistency in cmd-line parameters '{arg}'!")
-                else:
-                    try:
-                        value = next(args)
-                    except StopIteration:
-                        raise ArgParseError(f"Missing value for parameter '{arg}'")
-                    else:
-                        if value.startswith("--") is False:
-                            self._update_params(temp, section.upper(), option, value)
-                        else:
-                            raise ArgParseError(f"Incorrect value '{value}' for parameter '{arg}'!")
-            else:
-                raise ArgParseError(f"Inconsistency in cmd-line parameters '{arg}'!")
-
-        return temp
