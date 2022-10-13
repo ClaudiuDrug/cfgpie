@@ -9,7 +9,7 @@ def get_config(**kwargs):
 
     if name not in INSTANCES:
 
-        instance: CfgParser = CfgParser(**kwargs)
+        instance: CfgParser = CfgParser(name, **kwargs)
         INSTANCES[name] = instance
 
     return INSTANCES[name]

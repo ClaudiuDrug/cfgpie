@@ -46,7 +46,12 @@ other: CfgParser = get_config(instance="other")
 
 
 if __name__ == '__main__':
-    
+
+    print("*" * 80)
+    print("cfg:", cfg.name)
+    print("cfg2:", cfg2.name)
+    print("other:", other.name)
+
     print("*" * 80)
     print("cfg == other:", cfg == other)
     print("cfg is other:", cfg is other)
@@ -57,6 +62,10 @@ if __name__ == '__main__':
 ```
 
 ```
+********************************************************************************
+cfg: main.CfgParser
+cfg2: main.CfgParser
+other: other.CfgParser
 ********************************************************************************
 cfg == other: False
 cfg is other: False
@@ -135,7 +144,7 @@ This is also possible given that cmd-args are fetched as a list of strings:
 ```python
 if __name__ == '__main__':
     cfg.parse(["--tests-option_1", "another_value", "--tests-option_2", "6543"])
-    
+
     print(cfg.get("TESTS", "option_1"))
     print(cfg.getint("TESTS", "option_2"))
 ```
@@ -176,16 +185,16 @@ If not provided, by default, `CfgParser` will set:
 
         * will recursively create the folder structure if missing (see `folder()` & `file()` methods in [utils.py](src/cfgpie/utils.py)).
 
-    > All of which can be accessed by prefixing them with `get`:
-    >
-    > * `getlist("SECTION", "option")`
-    > * `gettuple("SECTION", "option")`
-    > * `getset("SECTION", "option")`
-    > * `getdict("SECTION", "option")`
-    > * `getdecimal("SECTION", "option")`
-    > * `getpath("SECTION", "option")`
-    > * `getfolder("SECTION", "option")`
-    > * `getfile("SECTION", "option")`
+  > All of which can be accessed by prefixing them with `get`:
+  >
+  > * `getlist("SECTION", "option")`
+  > * `gettuple("SECTION", "option")`
+  > * `getset("SECTION", "option")`
+  > * `getdict("SECTION", "option")`
+  > * `getdecimal("SECTION", "option")`
+  > * `getpath("SECTION", "option")`
+  > * `getfolder("SECTION", "option")`
+  > * `getfile("SECTION", "option")`
 
 All other parameters are passed directly to
 [ConfigParser](https://docs.python.org/3.7/library/configparser.html).

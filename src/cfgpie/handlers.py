@@ -85,8 +85,13 @@ class CfgParser(ConfigParser, ArgsParser):
     def _exists(item: str) -> bool:
         return exists(item) and isfile(item)
 
-    def __init__(self, **kwargs):
+    def __init__(self, name: str, **kwargs):
         super(CfgParser, self).__init__(**self._default_params(kwargs))
+        self.__name = name
+
+    @property
+    def name(self):
+        return self.__name
 
     def parse(self, args: Sequence[str] = None):
         """Parse command-line arguments and update the configuration."""
