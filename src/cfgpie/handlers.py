@@ -2,10 +2,11 @@
 
 from ast import literal_eval
 from configparser import ExtendedInterpolation, ConfigParser
+from decimal import Decimal
 from os.path import isfile, exists, realpath
 from sys import argv
 from typing import Iterator, Sequence, Union, List, Tuple, Dict
-from decimal import Decimal
+
 from customlib.filehandlers import FileHandler
 
 from .constants import Key, Value, ROOT, CONFIG
