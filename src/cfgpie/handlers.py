@@ -5,9 +5,8 @@ from configparser import ExtendedInterpolation, ConfigParser
 from decimal import Decimal
 from os.path import isfile, exists, realpath
 from sys import argv
+from threading import RLock
 from typing import Iterator, Sequence, Union, List, Tuple, Dict
-
-from customlib.filehandlers import FileHandler
 
 from .constants import Key, Value, ROOT, CONFIG
 from .exceptions import ArgParseError
@@ -69,6 +68,8 @@ class CfgParser(ConfigParser, ArgsParser):
         "directory": ROOT,
     }
 
+    _thread_lock: RLock = RLock()
+
     @staticmethod
     def _as_dict(mapping: Union[Dict, List[Tuple[Key, Value]]] = None, **kwargs) -> dict:
         if isinstance(mapping, list):
@@ -88,29 +89,31 @@ class CfgParser(ConfigParser, ArgsParser):
 
     def __init__(self, name: str, **kwargs):
         super(CfgParser, self).__init__(**self._default_params(kwargs))
-        self.__name = name
+        self._name = name
 
     @property
     def name(self):
-        return self.__name
+        return self._name
 
     def parse(self, args: Sequence[str] = None):
         """Parse command-line arguments and update the configuration."""
-        if args is None:
-            args = argv[1:]
+        with self._thread_lock:
+            if args is None:
+                args = argv[1:]
 
-        if len(args) > 0:
-            self.read_dict(
-                dictionary=super(CfgParser, self).parse(iter(args)),
-                source="<cmd-line>"
-            )
+            if len(args) > 0:
+                self.read_dict(
+                    dictionary=super(CfgParser, self).parse(iter(args)),
+                    source="<cmd-line>"
+                )
 
     def set_defaults(self, mapping: Union[Dict, List[Tuple[Key, Value]]] = None, **kwargs):
         """Update `DEFAULT` section with `mapping` & `kwargs`."""
-        kwargs: dict = self._as_dict(mapping, **kwargs)
+        with self._thread_lock:
+            kwargs: dict = self._as_dict(mapping, **kwargs)
 
-        if len(kwargs) > 0:
-            self._read_defaults(kwargs)
+            if len(kwargs) > 0:
+                self._read_defaults(kwargs)
 
     def open(self, file_path: Union[str, List[str]], encoding: str = "UTF-8", fallback: dict = None):
         """
@@ -118,21 +121,21 @@ class CfgParser(ConfigParser, ArgsParser):
         If `file_path` does not exist and `fallback` is provided
         the latter will be used and a new configuration file will be written.
         """
+        with self._thread_lock:
+            if isinstance(file_path, str):
+                file_path = [file_path]
 
-        if isinstance(file_path, str):
-            file_path = [file_path]
+            if any([self._exists(item) for item in file_path]):
+                self.read(file_path, encoding=encoding)
 
-        if any([self._exists(item) for item in file_path]):
-            self.read(file_path, encoding=encoding)
-
-        elif fallback is not None:
-            self.read_dict(dictionary=fallback, source="<backup>")
-            self.save(CONFIG, encoding)
+            elif fallback is not None:
+                self.read_dict(dictionary=fallback, source="<backup>")
+                self.save(CONFIG, encoding)
 
     def save(self, file_path: str, encoding: str):
         """Save the configuration to `file_path`."""
         ensure_folder(file_path)
-        with FileHandler(file_path, "w", encoding=encoding) as fh:
+        with open(file_path, "w", encoding=encoding) as fh:
             self.write(fh)
 
     def _default_params(self, kwargs: dict) -> dict:

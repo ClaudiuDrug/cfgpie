@@ -15,18 +15,6 @@ python -m pip install [--upgrade] cfgpie
 
 ---
 
-#### Dependencies:
-
-* [customlib](https://github.com/ClaudiuDrug/custom-library):
-
-    * `customlib.filehandlers.FileHandler`
-
-```commandline
-python -m pip install [--upgrade] customlib
-```
-
----
-
 #### Usage:
 
 After installation, simply import the method `get_config` from `cfgpie` module:
