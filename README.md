@@ -28,9 +28,9 @@ By passing a name with the `instance` param we can have multiple instances:
 
 from cfgpie import CfgParser, get_config
 
-cfg: CfgParser = get_config(instance="main")
-cfg2: CfgParser = get_config(instance="main")
-other: CfgParser = get_config(instance="other")
+cfg: CfgParser = get_config(name="main")
+cfg2: CfgParser = get_config(name="main")
+other: CfgParser = get_config(name="other")
 
 
 if __name__ == '__main__':
@@ -105,7 +105,7 @@ from cfgpie import CfgParser, get_config
 
 from .constants import ROOT, CONFIG, BACKUP
 
-cfg: CfgParser = get_config(instance="main")
+cfg: CfgParser = get_config(name="main")
 
 # we can set default section options:
 cfg.set_defaults(directory=ROOT)
