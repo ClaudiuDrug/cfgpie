@@ -68,8 +68,6 @@ class CfgParser(ConfigParser, ArgsParser):
         "directory": ROOT,
     }
 
-    _thread_lock: RLock = RLock()
-
     @staticmethod
     def _as_dict(mapping: Union[Dict, List[Tuple[Key, Value]]] = None, **kwargs) -> dict:
         if isinstance(mapping, list):
@@ -88,8 +86,11 @@ class CfgParser(ConfigParser, ArgsParser):
         return exists(item) and isfile(item)
 
     def __init__(self, name: str, **kwargs):
-        super(CfgParser, self).__init__(**self._default_params(kwargs))
+
         self._name = name
+        self._thread_lock: RLock = self._dispatch(self._name)
+
+        super(CfgParser, self).__init__(**self._default_params(kwargs))
 
     @property
     def name(self):
@@ -134,18 +135,20 @@ class CfgParser(ConfigParser, ArgsParser):
 
     def save(self, file_path: str, encoding: str):
         """Save the configuration to `file_path`."""
-        ensure_folder(file_path)
-        with open(file_path, "w", encoding=encoding) as fh:
-            self.write(fh)
+        with self._thread_lock:
+            ensure_folder(file_path)
+            with open(file_path, "w", encoding=encoding) as fh:
+                self.write(fh)
 
     def _default_params(self, kwargs: dict) -> dict:
-        temp: dict = kwargs.copy()
-        kwargs.update(
-            defaults=temp.pop("defaults", self._DEFAULTS),
-            interpolation=temp.pop("interpolation", ExtendedInterpolation()),
-            converters=self._get_converters(temp),
-        )
-        return kwargs
+        with self._thread_lock:
+            temp: dict = kwargs.copy()
+            kwargs.update(
+                defaults=temp.pop("defaults", self._DEFAULTS),
+                interpolation=temp.pop("interpolation", ExtendedInterpolation()),
+                converters=self._get_converters(temp),
+            )
+            return kwargs
 
     def _get_converters(self, kwargs: dict) -> dict:
         if "converters" in kwargs:
@@ -156,3 +159,9 @@ class CfgParser(ConfigParser, ArgsParser):
         converters: dict = self._DEFAULT_CONVERTERS.copy()
         converters.update(**kwargs)
         return converters
+
+    def _dispatch(self, name: str) -> RLock:
+        if name not in self.__locks__:
+            instance = RLock()
+            self.__locks__.update({name: instance})
+        return self.__locks__.get(name)
