@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 
+from weakref import WeakValueDictionary
 from ast import literal_eval
 from configparser import ExtendedInterpolation, ConfigParser
 from decimal import Decimal
@@ -67,6 +68,8 @@ class CfgParser(ConfigParser, ArgsParser):
     _DEFAULTS: dict = {
         "directory": ROOT,
     }
+
+    __locks__ = WeakValueDictionary()
 
     @staticmethod
     def _as_dict(mapping: Union[Dict, List[Tuple[Key, Value]]] = None, **kwargs) -> dict:
