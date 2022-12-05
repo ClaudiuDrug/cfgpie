@@ -9,16 +9,17 @@ def ensure_folder(path: str):
     Read the file path and recursively create the folder structure if needed.
     """
     folder_path: str = dirname(realpath(path))
-    try:
+
+    if not exists(path):
         make_dirs(folder_path)
-    except FileExistsError:
-        pass
 
 
 def make_dirs(path: str):
     """Checks if a folder path exists and create one if not."""
-    if not exists(path):
+    try:
         makedirs(path)
+    except FileExistsError:
+        pass
 
 
 def folder(value: str) -> str:
