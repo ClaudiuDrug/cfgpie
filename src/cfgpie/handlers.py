@@ -88,7 +88,7 @@ class CfgParser(ConfigParser, ArgsParser):
     def _exists(item: str) -> bool:
         return exists(item) and isfile(item)
 
-    def __init__(self, name: str, **kwargs):
+    def __init__(self, name: str = "cfgpie", **kwargs):
 
         self._name = name
         self._thread_lock: RLock = self._dispatch(self._name)
