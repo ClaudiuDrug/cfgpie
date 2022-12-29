@@ -22,7 +22,7 @@ After installation, simply import the method `get_config` from `cfgpie` module:
 from cfgpie import CfgParser, get_config
 ```
 
-By passing a name with the `instance` param we can have multiple instances:
+By passing a name with the `name` param we can have multiple instances:
 ```python
 # mymodule.py
 
@@ -153,7 +153,7 @@ If not provided, by default, `CfgParser` will set:
 * `defaults` parameter as dict with section `DEFAULT` and option `directory` to the root folder of the `__main__` module.
 
 
-* `instance` parameter to the name `default`;
+* `name` parameter to: `cfgpie`;
 
 
 * `interpolation` parameter to [ExtendedInterpolation](https://docs.python.org/3.7/library/configparser.html#configparser.ExtendedInterpolation);
