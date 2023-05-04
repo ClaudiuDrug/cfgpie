@@ -3,15 +3,22 @@
 from os.path import dirname, realpath, join
 from sys import modules
 from types import ModuleType
-from typing import TypeVar
 from weakref import WeakValueDictionary
 
-# types:
-Key = TypeVar("Key")
-Value = TypeVar("Value")
+__all__ = [
+    "NAME",
+    "INSTANCES",
+    "RLOCKS",
+    "ROOT",
+    "CONFIG",
+]
+
+# default name for all instances:
+NAME: str = "cfgpie"
 
 # container for all instances:
-INSTANCES = WeakValueDictionary()
+INSTANCES: WeakValueDictionary = WeakValueDictionary()
+RLOCKS: WeakValueDictionary = WeakValueDictionary()
 
 # main python module:
 MODULE: ModuleType = modules.get("__main__")

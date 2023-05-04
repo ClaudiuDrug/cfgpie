@@ -1,17 +1,18 @@
 # -*- coding: UTF-8 -*-
 
-from weakref import WeakValueDictionary
 from ast import literal_eval
-from configparser import ExtendedInterpolation, ConfigParser
+from configparser import ConfigParser, ExtendedInterpolation
 from decimal import Decimal
 from os.path import isfile, exists, realpath
 from sys import argv
 from threading import RLock
-from typing import Iterator, Sequence, Union, List, Tuple, Dict
+from typing import Iterator, Sequence, Union, List, Dict, Tuple, Any
 
-from .constants import Key, Value, ROOT, CONFIG
+from .constants import NAME, RLOCKS, ROOT, CONFIG
 from .exceptions import ArgParseError
 from .utils import ensure_folder, folder, file
+
+__all__ = ["CfgParser"]
 
 
 class ArgsParser(object):
@@ -54,7 +55,7 @@ class ArgsParser(object):
 class CfgParser(ConfigParser, ArgsParser):
     """Configuration handle."""
 
-    _DEFAULT_CONVERTERS: dict = {
+    _CONVERTERS: dict = {
         "decimal": Decimal,
         "list": literal_eval,
         "tuple": literal_eval,
@@ -69,31 +70,40 @@ class CfgParser(ConfigParser, ArgsParser):
         "directory": ROOT,
     }
 
-    __locks__ = WeakValueDictionary()
+    @staticmethod
+    def _dispatch_rlock(name: str = NAME) -> RLock:
+        if name not in RLOCKS:
+            instance: RLock = RLock()
+            RLOCKS.update({name: instance})
+        return RLOCKS.get(name)
 
     @staticmethod
-    def _as_dict(mapping: Union[Dict, List[Tuple[Key, Value]]] = None, **kwargs) -> dict:
-        if isinstance(mapping, list):
-            mapping = dict(mapping)
-
-        elif mapping is None:
-            mapping = dict()
-
-        if len(kwargs) > 0:
-            mapping.update(kwargs)
-
-        return mapping
+    def _as_dict(mapping: Union[Dict[str, Any], List[Tuple[str, Any]]] = None, **kwargs) -> dict:
+        if mapping is not None:
+            kwargs.update(mapping)
+        return kwargs
 
     @staticmethod
     def _exists(item: str) -> bool:
         return exists(item) and isfile(item)
 
-    def __init__(self, name: str = "cfgpie", **kwargs):
-
+    def __init__(self, name: str = NAME, **kwargs):
         self._name = name
-        self._thread_lock: RLock = self._dispatch(self._name)
 
-        super(CfgParser, self).__init__(**self._default_params(kwargs))
+        if "defaults" not in kwargs:
+            kwargs.update(defaults=self._DEFAULTS)
+
+        if "interpolation" not in kwargs:
+            kwargs.update(interpolation=ExtendedInterpolation())
+
+        if "converters" not in kwargs:
+            kwargs.update(converters=self._CONVERTERS)
+        else:
+            temp: dict = self._CONVERTERS.copy()
+            temp.update(kwargs.pop("converters"))
+            kwargs.update(converters=temp)
+
+        super(CfgParser, self).__init__(**kwargs)
 
     @property
     def name(self):
@@ -101,7 +111,7 @@ class CfgParser(ConfigParser, ArgsParser):
 
     def parse(self, args: Sequence[str] = None):
         """Parse command-line arguments and update the configuration."""
-        with self._thread_lock:
+        with self._thread_lock():
             if args is None:
                 args = argv[1:]
 
@@ -111,13 +121,13 @@ class CfgParser(ConfigParser, ArgsParser):
                     source="<cmd-line>"
                 )
 
-    def set_defaults(self, mapping: Union[Dict, List[Tuple[Key, Value]]] = None, **kwargs):
+    def set_defaults(self, mapping: Union[Dict[str, Any], List[Tuple[str, Any]]] = None, **kwargs):
         """Update `DEFAULT` section with `mapping` & `kwargs`."""
-        with self._thread_lock:
-            kwargs: dict = self._as_dict(mapping, **kwargs)
+        with self._thread_lock():
+            params: dict = self._as_dict(mapping, **kwargs)
 
-            if len(kwargs) > 0:
-                self._read_defaults(kwargs)
+            if len(params) > 0:
+                self._read_defaults(params)
 
     def open(self, file_path: Union[str, List[str]], encoding: str = "UTF-8", fallback: dict = None):
         """
@@ -125,7 +135,7 @@ class CfgParser(ConfigParser, ArgsParser):
         If `file_path` does not exist and `fallback` is provided
         the latter will be used and a new configuration file will be written.
         """
-        with self._thread_lock:
+        with self._thread_lock():
             if isinstance(file_path, str):
                 file_path = [file_path]
 
@@ -136,35 +146,14 @@ class CfgParser(ConfigParser, ArgsParser):
                 self.read_dict(dictionary=fallback, source="<backup>")
                 self.save(CONFIG, encoding)
 
-    def save(self, file_path: str, encoding: str):
+    def save(self, file_path: str, encoding: str = "UTF-8"):
         """Save the configuration to `file_path`."""
-        with self._thread_lock:
+        with self._thread_lock():
             ensure_folder(file_path)
             with open(file_path, "w", encoding=encoding) as fh:
                 self.write(fh)
 
-    def _default_params(self, kwargs: dict) -> dict:
-        with self._thread_lock:
-            temp: dict = kwargs.copy()
-            kwargs.update(
-                defaults=temp.pop("defaults", self._DEFAULTS),
-                interpolation=temp.pop("interpolation", ExtendedInterpolation()),
-                converters=self._get_converters(temp),
-            )
-            return kwargs
-
-    def _get_converters(self, kwargs: dict) -> dict:
-        if "converters" in kwargs:
-            return self._merge_converters(**kwargs.pop("converters"))
-        return self._DEFAULT_CONVERTERS
-
-    def _merge_converters(self, **kwargs) -> dict:
-        converters: dict = self._DEFAULT_CONVERTERS.copy()
-        converters.update(**kwargs)
-        return converters
-
-    def _dispatch(self, name: str) -> RLock:
-        if name not in self.__locks__:
-            instance = RLock()
-            self.__locks__.update({name: instance})
-        return self.__locks__.get(name)
+    def _thread_lock(self, name: str = NAME) -> RLock:
+        if not hasattr(self, "_rlock"):
+            self._rlock: RLock = self._dispatch_rlock(name)
+        return self._rlock
