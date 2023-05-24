@@ -2,11 +2,13 @@
 
 from os import makedirs
 from os.path import dirname, realpath, exists
+from typing import Union, Dict, List, Tuple, Any
 
 __all__ = [
     "ensure_folder",
     "folder",
     "file",
+    "as_dict",
 ]
 
 
@@ -46,3 +48,9 @@ def file(path: str) -> str:
     path: str = realpath(path)
     ensure_folder(path)
     return path
+
+
+def as_dict(mapping: Union[Dict[str, Any], List[Tuple[str, Any]]] = None, **kwargs) -> dict:
+    if mapping is not None:
+        kwargs.update(mapping)
+    return kwargs

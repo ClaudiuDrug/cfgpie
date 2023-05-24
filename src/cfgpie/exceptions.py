@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 
-__all__ = ["ArgParseError"]
+__all__ = ["BaseConfigError", "ArgParseError"]
 
 
 class BaseConfigError(Exception):

@@ -13,11 +13,13 @@ __all__ = [
     "CONFIG",
 ]
 
-# default name for all instances:
+# default instance name:
 NAME: str = "cfgpie"
 
-# container for all instances:
+# config parser instances container:
 INSTANCES: WeakValueDictionary = WeakValueDictionary()
+
+# recursive thread locks container:
 RLOCKS: WeakValueDictionary = WeakValueDictionary()
 
 # main python module:

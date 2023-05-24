@@ -17,73 +17,76 @@ python -m pip install [--upgrade] cfgpie
 
 #### Usage:
 
-After installation, simply import the method `get_config` from `cfgpie` module:
+After installation, simply import the class `CfgParser` from `cfgpie` module:
+
 ```python
-from cfgpie import CfgParser, get_config
+from cfgpie import CfgParser
 ```
 
-By passing a name with the `name` param we can have multiple instances:
+By passing a name with the `name` param we can have multiple named instances:
+
 ```python
 # mymodule.py
 
-from cfgpie import CfgParser, get_config
+from cfgpie import CfgParser
 
-cfg: CfgParser = get_config(name="main")
-cfg2: CfgParser = get_config(name="main")
-other: CfgParser = get_config(name="other")
+cfg1: CfgParser = CfgParser(name="root")
+cfg2: CfgParser = CfgParser(name="root")
+cfg3: CfgParser = CfgParser(name="other")
 
 
 if __name__ == '__main__':
 
     print("*" * 80)
-    print("cfg:", cfg.name)
+    print("cfg1:", cfg1.name)
     print("cfg2:", cfg2.name)
-    print("other:", other.name)
+    print("cfg3:", cfg3.name)
 
     print("*" * 80)
-    print("cfg == other:", cfg == other)
-    print("cfg is other:", cfg is other)
+    print("cfg1 == cfg3:", cfg1 == cfg3)
+    print("cfg1 is cfg3:", cfg1 is cfg3)
 
     print("*" * 80)
-    print("cfg == cfg2:", cfg == cfg2)
-    print("cfg is cfg2:", cfg is cfg2)
+    print("cfg1 == cfg2:", cfg1 == cfg2)
+    print("cfg1 is cfg2:", cfg1 is cfg2)
 ```
 
 ```
 ********************************************************************************
-cfg: main.CfgParser
-cfg2: main.CfgParser
-other: other.CfgParser
+cfg1: root
+cfg2: root
+cfg3: other
 ********************************************************************************
-cfg == other: False
-cfg is other: False
+cfg1 == cfg3: False
+cfg1 is cfg3: False
 ********************************************************************************
-cfg == cfg2: True
-cfg is cfg2: True
+cfg1 == cfg2: True
+cfg1 is cfg2: True
 ```
 
-Setting up our config environment:
+Setting up our configuration:
 
 ```python
-# constants.py
+# -*- coding: UTF-8 -*-
 
-from os.path import join, dirname, realpath
+from os.path import dirname, realpath, join
 from sys import modules
 from types import ModuleType
 
-# main module:
+from cfgpie import CfgParser
+
+# main python module:
 MODULE: ModuleType = modules.get("__main__")
 
 # root directory:
 ROOT: str = dirname(realpath(MODULE.__file__))
 
-# default config file path:
+# config default file path:
 CONFIG: str = join(ROOT, "config", "config.ini")
 
-# backup config params:
 BACKUP: dict = {
     "FOLDERS": {
-        "logger": r"${DEFAULT:directory}\logs",
+        "logger": r"${DEFAULT:directory}\logs",  # extended interpolation
     },
     "TESTS": {
         "option_1": "some_value",
@@ -91,51 +94,41 @@ BACKUP: dict = {
         "option_3": True,
         "option_4": r"${DEFAULT:directory}\value",  # extended interpolation
         "option_5": ["abc", 345, 232.545, "3534.5435", True, {"key_": "value_"}, False],
-    },
+    }
 }
-```
 
-For interpolation, refer to `interpolation-of-values`
-[documentation](https://docs.python.org/3.7/library/configparser.html#interpolation-of-values).
+cfg: CfgParser = CfgParser(
+    "root",
+    defaults={"directory": ROOT}
+)
 
-```python
-# mymodule.py
-
-from cfgpie import CfgParser, get_config
-
-from .constants import ROOT, CONFIG, BACKUP
-
-cfg: CfgParser = get_config(name="main")
-
-# we can set default section options:
-cfg.set_defaults(directory=ROOT)
-# also possible at instance creation:
-# cfg: CfgParser = get_config(defaults=some_dict)
+# we can update `DEFAULT` section:
+# cfg.set_defaults(directory=ROOT)
 
 # we can provide a backup dictionary
 # in case our config file does not exist
 # and by default a new file will be created
-cfg.open(file_path=CONFIG, encoding="UTF-8", fallback=BACKUP)
+cfg.open(
+    file_path=CONFIG,
+    encoding="UTF-8",
+    fallback=BACKUP,
+)
 
 
 if __name__ == '__main__':
 
     # we're parsing cmd-line arguments
-    cfg.parse()
+    cfg.read_argv()
+    
+    # cmd-args are fetched as a list of strings:
+    # cfg.read_argv(["--tests-option_1", "another_value", "--tests-option_2", "6543"])
 
     print(cfg.get("TESTS", "option_1"))
     print(cfg.getint("TESTS", "option_2"))
 ```
 
-This is also possible given that cmd-args are fetched as a list of strings:
-
-```python
-if __name__ == '__main__':
-    cfg.parse(["--tests-option_1", "another_value", "--tests-option_2", "6543"])
-
-    print(cfg.get("TESTS", "option_1"))
-    print(cfg.getint("TESTS", "option_2"))
-```
+For interpolation, refer to `interpolation-of-values`
+[documentation](https://docs.python.org/3.7/library/configparser.html#interpolation-of-values).
 
 To pass cmd-line arguments:
 
