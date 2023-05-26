@@ -177,7 +177,7 @@ class CfgParser(ConfigParser, ArgsParser):
         self._thread_lock(self._name).acquire()
         try:
             args = self._check_argv(args)
-        except (TypeError, ValueError):
+        except TypeError:
             raise
         else:
             if len(args) > 0:
