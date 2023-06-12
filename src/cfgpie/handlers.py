@@ -17,6 +17,8 @@ from .utils import folder, file, ensure_folder, as_dict
 __all__ = [
     "BasicInterpolation",
     "ExtendedInterpolation",
+    "Singleton",
+    "ArgsParser",
     "CfgParser",
 ]
 
@@ -35,6 +37,58 @@ CONVERTERS: dict = {
     "folder": folder,
     "file": file,
 }
+
+
+class Singleton(object):
+
+    @staticmethod
+    def _check_name(value: str) -> str:
+        if not isinstance(value, str):
+            raise TypeError(
+                f"CfgParser 'name' attribute must be of "
+                f"type 'str' not '{type(value).__name__}'!"
+            )
+        if len(value) == 0:
+            raise ValueError(
+                f"CfgParser 'name' attribute must be a "
+                f"string object with a length greater than '0'!"
+            )
+        return value
+
+    @staticmethod
+    def _check_defaults(params: dict):
+        defaults: dict = DEFAULTS.copy()
+        if "defaults" in params:
+            defaults.update(params.pop("defaults"))
+        params.update(defaults=defaults)
+
+    @staticmethod
+    def _check_interpolation(params: dict):
+        if "interpolation" not in params:
+            params.update(interpolation=ExtendedInterpolation())
+
+    @staticmethod
+    def _check_converters(params: dict):
+        converters: dict = CONVERTERS.copy()
+        if "converters" in params:
+            converters.update(params.pop("converters"))
+        params.update(converters=converters)
+
+    def __init__(self, parser: Type[CfgParser]):
+        self._parser = parser
+
+    def __call__(self, name: str = NAME, **kwargs):
+        self._check_name(name)
+        if name not in INSTANCES:
+            self._check_params(kwargs)
+            instance = self._parser(name, **kwargs)
+            INSTANCES.update({name: instance})
+        return INSTANCES.get(name)
+
+    def _check_params(self, params: dict):
+        self._check_defaults(params)
+        self._check_interpolation(params)
+        self._check_converters(params)
 
 
 class ArgsParser(object):
@@ -83,19 +137,6 @@ class ArgsParser(object):
         return temp
 
 
-class Singleton(object):
-
-    def __init__(self, parser: Type[CfgParser]):
-        self._parser = parser
-
-    def __call__(self, name: str = NAME, **kwargs):
-        self._parser._check_name(name)
-        if name not in INSTANCES:
-            instance = self._parser(name, **kwargs)
-            INSTANCES.update({name: instance})
-        return INSTANCES.get(name)
-
-
 @Singleton
 class CfgParser(ConfigParser, ArgsParser):
     """
@@ -113,37 +154,9 @@ class CfgParser(ConfigParser, ArgsParser):
             RLOCKS.update({name: instance})
         return RLOCKS.get(name)
 
-    @staticmethod
-    def _check_name(value: str) -> str:
-        if not isinstance(value, str):
-            raise TypeError(
-                f"CfgParser 'name' attribute must be of "
-                f"type 'str' not '{type(value).__name__}'!"
-            )
-        if len(value) == 0:
-            raise ValueError(
-                f"CfgParser 'name' attribute must be a "
-                f"string object with a length greater than '0'!"
-            )
-        return value
-
     def __init__(self, name: str = NAME, **kwargs):
-        self._name = name
-
-        defaults: dict = DEFAULTS.copy()
-        if "defaults" in kwargs:
-            defaults.update(kwargs.pop("defaults"))
-        kwargs.update(defaults=defaults)
-
-        if "interpolation" not in kwargs:
-            kwargs.update(interpolation=ExtendedInterpolation())
-
-        converters: dict = CONVERTERS.copy()
-        if "converters" in kwargs:
-            converters.update(kwargs.pop("converters"))
-        kwargs.update(converters=converters)
-
         super(ConfigParser, self).__init__(**kwargs)
+        self._name = name
 
     @property
     def name(self) -> str:
