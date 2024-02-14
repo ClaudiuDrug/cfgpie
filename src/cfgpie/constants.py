@@ -1,16 +1,12 @@
 # -*- coding: UTF-8 -*-
 
-from os.path import dirname, realpath, join
-from sys import modules
+from os.path import dirname, realpath, abspath, join
+from sys import modules, argv
 from types import ModuleType
 from weakref import WeakValueDictionary
 
 __all__ = [
-    "NAME",
-    "INSTANCES",
-    "RLOCKS",
-    "ROOT",
-    "CONFIG",
+    "NAME", "INSTANCES", "RLOCKS", "ROOT", "CONFIG"
 ]
 
 # default instance name:
@@ -26,7 +22,12 @@ RLOCKS: WeakValueDictionary = WeakValueDictionary()
 MODULE: ModuleType = modules.get("__main__")
 
 # root directory:
-ROOT: str = dirname(realpath(MODULE.__file__))
+try:
+    # Try to access '__file__' attribute
+    ROOT: str = realpath(dirname(MODULE.__file__))
+except AttributeError:
+    # Fallback: Use the current working directory or script path from argv
+    ROOT: str = realpath(dirname(abspath(argv[0])))
 
 # config default file path:
 CONFIG: str = join(ROOT, "config", "config.ini")

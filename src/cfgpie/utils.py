@@ -5,10 +5,7 @@ from os.path import dirname, realpath, exists
 from typing import Union, Dict, List, Tuple, Any
 
 __all__ = [
-    "ensure_folder",
-    "folder",
-    "file",
-    "as_dict",
+    "ensure_folder", "folder", "file", "as_dict"
 ]
 
 

@@ -15,11 +15,8 @@ from .exceptions import ArgParseError
 from .utils import folder, file, ensure_folder, as_dict
 
 __all__ = [
-    "BasicInterpolation",
-    "ExtendedInterpolation",
-    "Singleton",
-    "ArgsParser",
-    "CfgParser",
+    "BasicInterpolation", "ExtendedInterpolation", "Singleton", "ArgsParser",
+    "CfgParser"
 ]
 
 

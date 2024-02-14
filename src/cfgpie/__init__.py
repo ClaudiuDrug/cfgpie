@@ -3,7 +3,5 @@
 from .handlers import *
 
 __all__ = [
-    "BasicInterpolation",
-    "ExtendedInterpolation",
-    "CfgParser",
+    "BasicInterpolation", "ExtendedInterpolation", "CfgParser"
 ]
